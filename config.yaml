@@ -1,0 +1,16 @@
+screen_color: #262626
+text_color: black
+text_size: 28
+
+
+# fixation point
+fixation_size: 56
+fixation_color: black
+fixation_text: +
+fixation_time: 1
+
+
+reaction_keys: [1, 2, 3, 4, 5]
+
+wait_time: 1.5
+wait_jitter: 1
