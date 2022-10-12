@@ -1,6 +1,9 @@
 import codecs
 import yaml
 import os
+import random
+import re
+from psychopy import visual
 
 
 def load_config():
@@ -32,3 +35,35 @@ def read_text_from_file(file_name, insert=''):
                 else:
                     msg.append(line)
     return ''.join(msg)
+
+
+def load_images(session, randomize):
+    training_image = os.listdir(os.path.join("images", "training"))
+    experimental_images = [elem for elem in os.listdir(os.path.join("images", "experiment"))
+                           if elem.split(".")[0].split("_")[1] == str(session)]
+
+    def my_digit_sort(my_list):
+        return list(map(int, re.findall(r'\d+', my_list)))[0]
+
+    experimental_images.sort(key=my_digit_sort)
+
+    if randomize:
+        random.shuffle(training_image)
+        random.shuffle(experimental_images)
+
+    return training_image, experimental_images
+
+
+def prepare_block_stimulus(images, win, config, folder):
+    result = []
+    for image in images:
+        stim = visual.image.ImageStim(win=win, image=os.path.join("images", folder, image), pos=config["stimulus_pos"],
+                                      size=config["stimulus_size"], interpolate=True)
+        if image.find("_") != -1:
+            image_id = int(image.split("_")[0])
+        else:
+            image_id = int(image.split(".")[0])
+        result.append({"image_ID": image_id,
+                       "stimulus": stim,
+                       "image_name": image})
+    return result
