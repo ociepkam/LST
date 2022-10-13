@@ -106,7 +106,7 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
 def main():
     global PART_ID
     config = load_config()
-    info, PART_ID = part_info(test=True)
+    info, PART_ID = part_info(test=False)
 
     screen_res = dict(get_screen_res())
     win = visual.Window(list(screen_res.values()), fullscr=True, units='pix', screen=0, color=config["screen_color"])
