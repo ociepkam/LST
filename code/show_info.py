@@ -7,8 +7,8 @@ def part_info(test=False):
         info = {'Part_id': '', 'Part_age': '20', 'Part_sex': 'MALE', 'Session': 1}
     else:
         info = {'Part_id': '', 'Part_age': '20', 'Part_sex': ['MALE', "FEMALE"], 'Session': [1, 2, 3]}
-        dictDlg = gui.DlgFromDict(dictionary=info, title='Stroop')
-        if not dictDlg.OK:
+        dict_dlg = gui.DlgFromDict(dictionary=info, title='Stroop')
+        if not dict_dlg.OK:
             exit(1)
     return info, f"{info['Part_id']}_{info['Part_sex']}_{info['Part_age']}_{info['Session']}"
 

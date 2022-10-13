@@ -6,7 +6,7 @@ text_color: black
 text_size: 28
 
 # stimulus
-stimulus_pos: [0, 0]
+stimulus_pos: [0, 150]
 stimulus_size: 400
 answer_time: 120
 
@@ -17,7 +17,20 @@ fixation_color: black
 fixation_text: +
 fixation_time: 1
 
+# answers
+answers_type: mouse # mouse or keyboard
 
+## for answers_type == mouse
+answer_size: 56
+answer_color: black
+answer_symbols: {1: 1, 2: 2, 3: 3, 4: 4, 5: 5} # key is real answer, value is presented symbol
+answer_pos: {1: [-400, -250], 2: [-200, -250], 3: [0, -250], 4: [200, -250], 5: [400, -250]}
+answer_box_color: green
+answer_box_width: 6
+answer_box_size: 86
+answer_fill_color: darkgrey
+
+# for answers_type == keyboard
 reaction_keys: ["1", "2", "3", "4", "5"]
 
 wait_time: 1.5
