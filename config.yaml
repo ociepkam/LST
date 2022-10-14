@@ -1,14 +1,13 @@
 randomize_trails: False
 
-
-screen_color: #262626
+screen_color: grey
 text_color: black
 text_size: 28
 
 # stimulus
 stimulus_pos: [0, 150]
 stimulus_size: 400
-answer_time: 120
+answer_time: 10
 
 
 # fixation point
@@ -33,5 +32,16 @@ answer_fill_color: darkgrey
 # for answers_type == keyboard
 reaction_keys: ["1", "2", "3", "4", "5"]
 
+# wait
 wait_time: 1.5
 wait_jitter: 1
+
+# feedback
+fdbk_training: True
+fdbk_experiment: False
+fdbk_correct: Poprawna odpowiedź
+fdbk_incorrect: Błędna odpowiedź
+fdbk_no_answer: Brak odpowiedzi
+fdbk_show_time: 2
+fdbk_color: black
+fdbk_size: 56

@@ -8,7 +8,7 @@ from psychopy import visual
 
 def load_config():
     try:
-        with open(os.path.join("config.yaml")) as yaml_file:
+        with open(os.path.join("config.yaml"), encoding='utf8') as yaml_file:
             doc = yaml.safe_load(yaml_file)
         return doc
     except:

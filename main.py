@@ -1,7 +1,6 @@
 import atexit
 import csv
 import random
-import time
 from os.path import join
 import pandas as pd
 from psychopy import visual, event, core
@@ -29,7 +28,21 @@ def draw_stim_list(stim_list, flag):
         elem.setAutoDraw(flag)
 
 
-def block(config, images, block_type, win, fixation, clock, screen_res, answers, answers_buttons, mouse):
+def show_stim(stim, stim_time, clock, win):
+    if stim is not None:
+        stim.setAutoDraw(True)
+    win.callOnFlip(clock.reset)
+    win.callOnFlip(event.clearEvents)
+    win.flip()
+    while clock.getTime() < stim_time:
+        check_exit()
+        win.flip()
+    if stim is not None:
+        stim.setAutoDraw(False)
+    win.flip()
+
+
+def block(config, images, block_type, win, fixation, clock, screen_res, answers, answers_buttons, mouse, feedback):
     show_info(win, join('.', 'messages', f'instruction_{block_type}.txt'), text_color=config["text_color"],
               text_size=config["text_size"], screen_res=screen_res)
 
@@ -41,11 +54,7 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
         n += 1
 
         # fixation
-        fixation.setAutoDraw(True)
-        win.flip()
-        time.sleep(config["fixation_time"])
-        fixation.setAutoDraw(False)
-        win.flip()
+        show_stim(fixation, config["fixation_time"], clock, win)
 
         trial["stimulus"].setAutoDraw(True)
         win.callOnFlip(clock.reset)
@@ -86,11 +95,6 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
         win.callOnFlip(event.clearEvents)
         win.flip()
 
-        wait_time = config["wait_time"] + random.random() * config["wait_jitter"]
-        while clock.getTime() < wait_time:
-            check_exit()
-            win.flip()
-
         correct_answer = str(answers.loc[(answers['item_type'] == block_type) &
                                          (answers['item_id'] == trial["image_ID"])]['answer'].iloc[0])
         if key:
@@ -102,11 +106,17 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
                          "correct_answer": correct_answer}
         RESULTS.append(trial_results)
 
+        if config[f"fdbk_{block_type}"]:
+            show_stim(feedback[acc], config["fdbk_show_time"], clock, win)
+
+        wait_time = config["wait_time"] + random.random() * config["wait_jitter"]
+        show_stim(None, wait_time, clock, win)
+
 
 def main():
     global PART_ID
     config = load_config()
-    info, PART_ID = part_info(test=False)
+    info, PART_ID = part_info(test=True)
 
     screen_res = dict(get_screen_res())
     win = visual.Window(list(screen_res.values()), fullscr=True, units='pix', screen=0, color=config["screen_color"])
@@ -127,6 +137,10 @@ def main():
                                             size=config["answer_box_size"], fillColor=config["answer_fill_color"])
                        for i in config["answer_symbols"]}
 
+    feedback_text = (config["fdbk_incorrect"], config["fdbk_no_answer"], config["fdbk_correct"])
+    feedback = {i: visual.TextStim(win, color=config["fdbk_color"], text=text, height=config["fdbk_size"])
+                for (i, text) in zip([0, -1, 1], feedback_text)}
+
     # load data and prepare trials
     answers = pd.read_csv(join("images", "answers.csv"))
     training_images, experimental_images = load_images(session=info["Session"], randomize=config["randomize_trails"])
@@ -134,10 +148,10 @@ def main():
     experimental_images = prepare_block_stimulus(experimental_images, win, config, folder="experiment")
 
     # run blocks
-    block(config=config, images=training_images, block_type="training", win=win, fixation=fixation,
-          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, mouse=mouse)
-    block(config=config, images=experimental_images, block_type="experiment", win=win, fixation=fixation,
-          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, mouse=mouse)
+    block(config=config, images=training_images, block_type="training", win=win, fixation=fixation, mouse=mouse,
+          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback)
+    block(config=config, images=experimental_images, block_type="experiment", win=win, fixation=fixation, mouse=mouse,
+          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback)
 
     # end info
     show_info(win, join('.', 'messages', f'end.txt'), text_color=config["text_color"],
