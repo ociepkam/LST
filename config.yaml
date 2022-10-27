@@ -15,7 +15,7 @@ answer_time: 10
 fixation_size: 56
 fixation_color: black
 fixation_text: +
-fixation_time: 1
+fixation_time: 0
 fixation_pos: [0, 0]
 
 # answers
@@ -70,7 +70,13 @@ fdbk_color: black
 fdbk_size: 56
 
 # clock
-show_clock: true
+show_clock: false
 clock_pos: [450, 350]
 clock_size: 60
 clock_show_time: 7
+
+# timer
+show_timer: true
+timer_pos: [450, 350]
+timer_color: black
+timer_size: 40

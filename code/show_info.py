@@ -4,12 +4,16 @@ from psychopy import visual, gui, event
 
 def part_info(test=False):
     if test:
-        info = {'Part_id': '', 'Part_age': '20', 'Part_sex': 'MALE', 'Session': 1}
+        info = {'Kod badanego': '', 'Wiek': '20', 'Płeć': 'MALE', 'Numer sesji': 1}
     else:
-        info = {'Part_id': '', 'Part_age': '20', 'Part_sex': ['MALE', "FEMALE"], 'Session': [1, 2, 3]}
+        info = {'Kod badanego': '', 'Wiek': '', 'Płeć': ['MALE', "FEMALE"], 'Numer sesji': [1, 2, 3]}
         dict_dlg = gui.DlgFromDict(dictionary=info, title='Stroop')
         if not dict_dlg.OK:
             exit(1)
+    info = {'Part_id': info['Kod badanego'],
+            'Part_age': info["Wiek"],
+            'Part_sex': info["Płeć"],
+            'Session': info["Numer sesji"]}
     return info, f"{info['Part_id']}_{info['Part_sex']}_{info['Part_age']}_{info['Session']}"
 
 

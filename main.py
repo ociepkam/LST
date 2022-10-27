@@ -48,8 +48,14 @@ def show_clock(clock_image, clock, config):
         clock_image.draw()
 
 
+def show_timer(timer, clock, config):
+    if config["show_timer"]:
+        timer.setText(config["answer_time"] - int(clock.getTime()))
+        timer.draw()
+
+
 def block(config, images, block_type, win, fixation, clock, screen_res, answers, answers_buttons, mouse, feedback,
-          extra_text, clock_image):
+          extra_text, clock_image, timer):
     show_info(win, join('.', 'messages', f'instruction_{block_type}.txt'), text_color=config["text_color"],
               text_size=config["text_size"], screen_res=screen_res)
 
@@ -72,6 +78,7 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
             win.flip()
             while clock.getTime() < config["answer_time"]:
                 show_clock(clock_image, clock, config)
+                show_timer(timer, clock, config)
                 answer = event.getKeys(keyList=config["reaction_keys"])
                 if answer:
                     reaction_time = clock.getTime()
@@ -86,6 +93,7 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
             win.flip()
             while clock.getTime() < config["answer_time"] and answer == "":
                 show_clock(clock_image, clock, config)
+                show_timer(timer, clock, config)
                 for k, ans_button in answers_buttons.items():
                     if mouse.isPressedIn(ans_button):
                         reaction_time = clock.getTime()
@@ -110,6 +118,7 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
             win.flip()
             while clock.getTime() < config["answer_time"]:
                 show_clock(clock_image, clock, config)
+                show_timer(timer, clock, config)
                 answers_buttons[1].draw()
                 answers_buttons[0].setText(u'{0}'.format(answer))
                 answers_buttons[0].draw()
@@ -171,6 +180,9 @@ def main():
     clock_image = visual.ImageStim(win, image=join('images', 'clock.png'), interpolate=True,
                                    size=config['clock_size'], pos=config['clock_pos'])
 
+    timer = visual.TextBox2(win, color=config["timer_color"], text=config["answer_time"],
+                            letterHeight=config["timer_size"], pos=config["timer_pos"], alignment="center")
+
     extra_text = [visual.TextBox2(win, color=text["color"], text=text["text"], letterHeight=text["size"],
                                   pos=text["pos"], alignment="center")
                   for text in config["extra_text_to_show"]]
@@ -209,10 +221,10 @@ def main():
     # run blocks
     block(config=config, images=training_images, block_type="training", win=win, fixation=fixation, mouse=mouse,
           clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback,
-          extra_text=extra_text, clock_image=clock_image)
+          extra_text=extra_text, clock_image=clock_image, timer=timer)
     block(config=config, images=experimental_images, block_type="experiment", win=win, fixation=fixation, mouse=mouse,
           clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback,
-          extra_text=extra_text, clock_image=clock_image)
+          extra_text=extra_text, clock_image=clock_image, timer=timer)
 
     # end info
     show_info(win, join('.', 'messages', f'end.txt'), text_color=config["text_color"],
