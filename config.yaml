@@ -25,7 +25,7 @@ answers_type: mouse # mouse, keyboard, or text
 answer_size: 56
 answer_color: black
 answer_symbols: {1: 1, 2: 2, 3: 3, 4: 4, 5: 5} # key is real answer, value is presented symbol
-answer_pos: {1: [-400, -250], 2: [-200, -250], 3: [0, -250], 4: [200, -250], 5: [400, -250]}
+answer_pos: {1: [-300, -250], 2: [-150, -250], 3: [0, -250], 4: [150, -250], 5: [300, -250]}
 answer_box_color: green
 answer_box_width: 6
 answer_box_size: 86

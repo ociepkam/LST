@@ -4,9 +4,9 @@ from psychopy import visual, gui, event
 
 def part_info(test=False):
     if test:
-        info = {'Kod badanego': '', 'Wiek': '20', 'Płeć': 'MALE', 'Numer sesji': 1}
+        info = {'Kod badanego': '', 'Wiek': '20', 'Płeć': 'M', 'Numer sesji': 1}
     else:
-        info = {'Kod badanego': '', 'Wiek': '', 'Płeć': ['MALE', "FEMALE"], 'Numer sesji': [1, 2, 3]}
+        info = {'Kod badanego': '', 'Wiek': '', 'Płeć': ['M', "K"], 'Numer sesji': [1, 2, 3]}
         dict_dlg = gui.DlgFromDict(dictionary=info, title='Stroop')
         if not dict_dlg.OK:
             exit(1)
