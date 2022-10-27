@@ -4,6 +4,7 @@ import random
 from os.path import join
 import pandas as pd
 from psychopy import visual, event, core
+import string
 
 from code.load_data import load_config, load_images, prepare_block_stimulus
 from code.screen_misc import get_screen_res
@@ -42,13 +43,19 @@ def show_stim(stim, stim_time, clock, win):
     win.flip()
 
 
-def block(config, images, block_type, win, fixation, clock, screen_res, answers, answers_buttons, mouse, feedback):
+def show_clock(clock_image, clock, config):
+    if config["show_clock"] and clock.getTime() > config["clock_show_time"]:
+        clock_image.draw()
+
+
+def block(config, images, block_type, win, fixation, clock, screen_res, answers, answers_buttons, mouse, feedback,
+          extra_text, clock_image):
     show_info(win, join('.', 'messages', f'instruction_{block_type}.txt'), text_color=config["text_color"],
               text_size=config["text_size"], screen_res=screen_res)
 
     n = -1
     for trial in images:
-        key = None
+        answer = ""
         reaction_time = None
         acc = -1
         n += 1
@@ -57,29 +64,32 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
         show_stim(fixation, config["fixation_time"], clock, win)
 
         trial["stimulus"].setAutoDraw(True)
+        draw_stim_list(extra_text, True)
         win.callOnFlip(clock.reset)
 
         # draw trial for answers_type == keyboard
         if config["answers_type"] == "keyboard":
             win.flip()
             while clock.getTime() < config["answer_time"]:
-                key = event.getKeys(keyList=config["reaction_keys"])
-                if key:
+                show_clock(clock_image, clock, config)
+                answer = event.getKeys(keyList=config["reaction_keys"])
+                if answer:
                     reaction_time = clock.getTime()
-                    key = key[0]
+                    answer = answer[0]
                     break
                 check_exit()
                 win.flip()
 
         # draw trial for answer_type == mouse
-        else:
+        elif config["answers_type"] == "mouse":
             draw_stim_list(answers_buttons.values(), True)
             win.flip()
-            while clock.getTime() < config["answer_time"] and key is None:
+            while clock.getTime() < config["answer_time"] and answer == "":
+                show_clock(clock_image, clock, config)
                 for k, ans_button in answers_buttons.items():
                     if mouse.isPressedIn(ans_button):
                         reaction_time = clock.getTime()
-                        key = str(k)
+                        answer = str(k)
                         break
                     elif ans_button.contains(mouse):
                         ans_button.borderWidth = config["answer_box_width"]
@@ -88,8 +98,40 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
                 check_exit()
                 win.flip()
             draw_stim_list(answers_buttons.values(), False)
+        elif config["answers_type"] == "text":
+            if config["text_box_text_type"] == "integer":
+                allowed_keys = list(string.digits)
+            elif config["text_box_text_type"] == "letters":
+                allowed_keys = list(string.ascii_lowercase) + list(string.ascii_uppercase)
+            elif config["text_box_text_type"] == "custom":
+                allowed_keys = config["text_box_symbols"]
+            else:
+                raise Exception("Wrong text_box_symbols in config. Choose from letters, integer, or custom")
+            win.flip()
+            while clock.getTime() < config["answer_time"]:
+                show_clock(clock_image, clock, config)
+                answers_buttons[1].draw()
+                answers_buttons[0].setText(u'{0}'.format(answer))
+                answers_buttons[0].draw()
+
+                check_exit()
+                if event.getKeys(['backspace']):
+                    answer = answer[:-1]
+                elif event.getKeys(config["text_box_accept_key"]):
+                    reaction_time = clock.getTime()
+                    break
+                elif len(answer) < config["text_box_max_elem"]:
+                    for letter in allowed_keys:
+                        if event.getKeys([letter]):
+                            answer += letter
+                else:
+                    event.getKeys()
+                win.flip()
+        else:
+            raise Exception("Wrong answers_type in config. Choose from keyboard, mouse, or text")
 
         # cleaning
+        draw_stim_list(extra_text, False)
         trial["stimulus"].setAutoDraw(False)
         win.callOnFlip(clock.reset)
         win.callOnFlip(event.clearEvents)
@@ -97,12 +139,12 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
 
         correct_answer = str(answers.loc[(answers['item_type'] == block_type) &
                                          (answers['item_id'] == trial["image_ID"])]['answer'].iloc[0])
-        if key:
-            acc = 1 if key == correct_answer else 0
+        if answer:
+            acc = 1 if answer == correct_answer else 0
         trial_results = {"n": n, "block_type": block_type,
                          "rt": reaction_time, "acc": acc,
                          "stimulus": trial["image_name"],
-                         "answer": key,
+                         "answer": answer,
                          "correct_answer": correct_answer}
         RESULTS.append(trial_results)
 
@@ -116,29 +158,46 @@ def block(config, images, block_type, win, fixation, clock, screen_res, answers,
 def main():
     global PART_ID
     config = load_config()
-    info, PART_ID = part_info(test=True)
+    info, PART_ID = part_info(test=config["procedure_test"])
 
     screen_res = dict(get_screen_res())
     win = visual.Window(list(screen_res.values()), fullscr=True, units='pix', screen=0, color=config["screen_color"])
 
-    if config["answers_type"] == "keyboard":
-        mouse = event.Mouse(visible=False)
-    elif config["answers_type"] == "mouse":
-        mouse = event.Mouse(visible=True)
-    else:
-        raise Exception("Wrong config answers_type. Choose answers_type == (keyboard or mouse)")
-
     clock = core.Clock()
-    fixation = visual.TextStim(win, color=config["fixation_color"], text=config["fixation_text"],
-                               height=config["fixation_size"])
-    answers_buttons = {i: visual.ButtonStim(win, color=config["answer_color"], text=config["answer_symbols"][i],
-                                            letterHeight=config["answer_size"], pos=config["answer_pos"][i],
-                                            borderColor=config["answer_box_color"], borderWidth=0,
-                                            size=config["answer_box_size"], fillColor=config["answer_fill_color"])
-                       for i in config["answer_symbols"]}
+    fixation = visual.TextBox2(win, color=config["fixation_color"], text=config["fixation_text"],
+                               letterHeight=config["fixation_size"], pos=config["fixation_pos"],
+                               alignment="center")
+
+    clock_image = visual.ImageStim(win, image=join('images', 'clock.png'), interpolate=True,
+                                   size=config['clock_size'], pos=config['clock_pos'])
+
+    extra_text = [visual.TextBox2(win, color=text["color"], text=text["text"], letterHeight=text["size"],
+                                  pos=text["pos"], alignment="center")
+                  for text in config["extra_text_to_show"]]
+
+    if config["answers_type"] == "mouse":
+        mouse = event.Mouse(visible=True)
+        answers_buttons = {i: visual.ButtonStim(win, color=config["answer_color"], text=config["answer_symbols"][i],
+                                                letterHeight=config["answer_size"], pos=config["answer_pos"][i],
+                                                borderColor=config["answer_box_color"], borderWidth=0,
+                                                size=config["answer_box_size"], fillColor=config["answer_fill_color"])
+                           for i in config["answer_symbols"]}
+    elif config["answers_type"] == "text":
+        mouse = event.Mouse(visible=False)
+        answers_buttons = [visual.TextBox2(win, color=config["text_box_text_color"], pos=config["text_box_pos"],
+                                           letterHeight=config["text_box_text_size"], text="", alignment="center"),
+                           visual.Rect(win, pos=config["text_box_pos"], height=config["text_box_height"],
+                                       width=config["text_box_width"],
+                                       fillColor=config["text_box_fill_color"],
+                                       lineColor=config["text_box_line_color"],
+                                       lineWidth=config["text_box_line_width"])]
+    else:
+        mouse = event.Mouse(visible=False)
+        answers_buttons = None
 
     feedback_text = (config["fdbk_incorrect"], config["fdbk_no_answer"], config["fdbk_correct"])
-    feedback = {i: visual.TextStim(win, color=config["fdbk_color"], text=text, height=config["fdbk_size"])
+    feedback = {i: visual.TextBox2(win, color=config["fdbk_color"], text=text, letterHeight=config["fdbk_size"],
+                                   alignment="center")
                 for (i, text) in zip([0, -1, 1], feedback_text)}
 
     # load data and prepare trials
@@ -149,9 +208,11 @@ def main():
 
     # run blocks
     block(config=config, images=training_images, block_type="training", win=win, fixation=fixation, mouse=mouse,
-          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback)
+          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback,
+          extra_text=extra_text, clock_image=clock_image)
     block(config=config, images=experimental_images, block_type="experiment", win=win, fixation=fixation, mouse=mouse,
-          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback)
+          clock=clock, screen_res=screen_res, answers=answers, answers_buttons=answers_buttons, feedback=feedback,
+          extra_text=extra_text, clock_image=clock_image)
 
     # end info
     show_info(win, join('.', 'messages', f'end.txt'), text_color=config["text_color"],
